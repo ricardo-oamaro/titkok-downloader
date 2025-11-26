@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Video Downloader</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 TikTok Video Downloader</h1>
+            <p class="subtitle">Baixe seus vídeos favoritos do TikTok rapidamente</p>
+        </div>
+
+        <div class="card">
+            <form id="downloadForm">
+                <div class="form-group">
+                    <label for="tiktokUrl">URL do TikTok:</label>
+                    <input 
+                        type="text" 
+                        id="tiktokUrl" 
+                        name="url" 
+                        placeholder="https://www.tiktok.com/@username/video/123456789"
+                        required
+                        autocomplete="off"
+                    >
+                </div>
+                
+                <button type="submit" id="downloadBtn" class="btn-download">
+                    <span class="btn-text">Baixar Vídeo</span>
+                    <span class="btn-loading" style="display: none;">
+                        <span class="spinner"></span>
+                        Baixando...
+                    </span>
+                </button>
+            </form>
+
+            <div id="message" class="message"></div>
+            
+            <div class="progress-container" id="progressContainer" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <p class="progress-text" id="progressText">Preparando download...</p>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <h3>📋 Como usar:</h3>
+            <ol>
+                <li>Copie o link do vídeo do TikTok</li>
+                <li>Cole o link no campo acima</li>
+                <li>Clique em "Baixar Vídeo"</li>
+                <li>Aguarde o download ser concluído</li>
+            </ol>
+            
+            <div class="warning">
+                <strong>⚠️ Importante:</strong> Use apenas para vídeos que você tem permissão para baixar. 
+                Respeite os direitos autorais e os termos de serviço do TikTok.
+            </div>
+
+            <div class="features">
+                <div class="feature">
+                    <span class="icon">🔒</span>
+                    <span>Seguro e Privado</span>
+                </div>
+                <div class="feature">
+                    <span class="icon">⚡</span>
+                    <span>Download Rápido</span>
+                </div>
+                <div class="feature">
+                    <span class="icon">🎥</span>
+                    <span>Alta Qualidade</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Powered by NestJS + yt-dlp</p>
+            <a href="/api-docs" target="_blank">📖 API Documentation</a>
+        </div>
+    </div>
+
+    <script src="/script.js"></script>
+</body>
+</html>
+
+
+
