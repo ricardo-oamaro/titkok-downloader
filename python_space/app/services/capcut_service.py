@@ -137,7 +137,8 @@ class CapCutAutomationService:
             clip = await self._add_watermark(clip, metadata.get('author', ''))
             
             # Exportar vídeo editado
-            output_filename = f"edited_{uuid.uuid4().hex[:8]}_{video_path.name}"
+            base_name = video_path.stem if video_path.suffix else video_path.name
+            output_filename = f"edited_{uuid.uuid4().hex[:8]}_{base_name}.mp4"
             output_path = self.temp_dir / output_filename
             
             clip.write_videofile(
