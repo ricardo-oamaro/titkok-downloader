@@ -13,23 +13,17 @@ Serviço completo para download de vídeos do TikTok com geração de comentári
 - 🌐 **Interface web** simples e moderna
 - 📖 **API RESTful** documentada com Swagger/OpenAPI
 
-## 🏗️ Arquitetura
+## 🏗️ Tecnologias
 
-O projeto possui **duas implementações**:
+- **Python 3.11+** - Linguagem principal
+- **FastAPI** - Framework web moderno e rápido
+- **yt-dlp** - Download de vídeos do TikTok
+- **Ollama (Llama 3)** - IA local para geração de comentários
+- **Pillow (PIL)** - Geração de imagens estilo Instagram
+- **Pydantic** - Validação de dados
+- **pytest** - Testes unitários e integração
 
-### 1. **Node.js/NestJS** (`nodejs_space/`)
-- Framework: NestJS
-- Download: `yt-dlp` via child_process
-- Status: Funcional (sem geração de imagens)
-
-### 2. **Python/FastAPI** (`python_space/`) ⭐ **RECOMENDADO**
-- Framework: FastAPI
-- Download: `yt-dlp` (biblioteca Python)
-- IA: Ollama (Llama 3)
-- Imagens: Pillow (PIL)
-- Status: Completo com todas as funcionalidades
-
-## 🚀 Quick Start (Python/FastAPI)
+## 🚀 Quick Start
 
 ### Pré-requisitos
 
@@ -50,8 +44,8 @@ ollama pull llama3
 
 ```bash
 # Clone o repositório
-git clone https://github.com/seu-usuario/tiktok_downloader_service.git
-cd tiktok_downloader_service/python_space
+git clone https://github.com/ricardo-oamaro/titkok-downloader.git
+cd titkok-downloader/python_space
 
 # Crie e ative o ambiente virtual
 python3 -m venv venv
@@ -140,24 +134,38 @@ pytest tests/test_integration_comments.py
 
 ```
 tiktok_downloader_service/
-├── nodejs_space/           # Implementação Node.js/NestJS
-│   ├── src/
-│   ├── public/            # Interface web
-│   └── package.json
-│
-└── python_space/          # Implementação Python/FastAPI ⭐
+└── python_space/
     ├── app/
-    │   ├── main.py        # Aplicação FastAPI
-    │   ├── config.py      # Configurações
-    │   ├── models/        # Schemas Pydantic
-    │   ├── services/      # Lógica de negócio
+    │   ├── main.py              # Aplicação FastAPI
+    │   ├── config.py            # Configurações
+    │   ├── models/              # Schemas Pydantic
+    │   │   ├── schemas.py
+    │   │   └── comment_schemas.py
+    │   ├── services/            # Lógica de negócio
     │   │   ├── download_service.py
     │   │   ├── ai_comments_service.py
     │   │   ├── image_generator_service.py
+    │   │   ├── text_parser_service.py
     │   │   └── zip_service.py
-    │   └── static/        # Interface web
-    ├── tests/             # Testes unitários e integração
-    └── requirements.txt
+    │   ├── middleware/          # Autenticação
+    │   │   └── auth.py
+    │   └── static/              # Interface web
+    │       ├── index.html
+    │       ├── styles.css
+    │       └── script.js
+    ├── tests/                   # Testes unitários e integração
+    │   ├── conftest.py
+    │   ├── test_ai_comments_service.py
+    │   ├── test_image_generator_service.py
+    │   ├── test_text_parser_service.py
+    │   ├── test_zip_service.py
+    │   └── test_integration_comments.py
+    ├── requirements.txt         # Dependências Python
+    ├── .env.example             # Exemplo de configuração
+    ├── README.md                # Documentação
+    ├── TIKTOK_AUTH_GUIDE.md     # Guia de autenticação
+    ├── COMMENTS_LIMITATION.md   # Limitações conhecidas
+    └── FIXES_APPLIED.md         # Histórico de correções
 ```
 
 ## 🔐 Autenticação do TikTok
@@ -176,8 +184,8 @@ O TikTok possui proteções anti-bot. Para downloads funcionarem:
 
 TikTok bloqueia extração de comentários com proteções anti-bot. A solução:
 
-1. **Ollama** extrai metadados do vídeo (título, descrição, hashtags)
-2. **Llama 3** gera 15 comentários realistas baseados no contexto
+1. **yt-dlp** extrai metadados do vídeo (título, descrição, hashtags)
+2. **Ollama (Llama 3)** gera 15 comentários realistas baseados no contexto
 3. Comentários são salvos em `comentarios.txt`
 4. 15 imagens estilo Instagram são geradas automaticamente
 
@@ -224,30 +232,11 @@ As imagens simulam o layout do Instagram:
 ### Rate Limiting
 ⚠️ Respeite os limites da API (configurável via `.env`)
 
-## 🛠️ Tecnologias
-
-### Backend
-- **Python 3.11+** - Linguagem principal
-- **FastAPI** - Framework web moderno
-- **yt-dlp** - Download de vídeos
-- **Ollama** - IA local para geração de comentários
-- **Pillow (PIL)** - Geração de imagens
-
-### Frontend
-- **HTML5/CSS3/JavaScript** - Interface web responsiva
-- **Vanilla JS** - Sem frameworks pesados
-
-### DevOps
-- **pytest** - Testes unitários e integração
-- **slowapi** - Rate limiting
-- **pydantic** - Validação de dados
-
 ## 📝 Documentação Adicional
 
 - 📖 **[Guia de Autenticação TikTok](python_space/TIKTOK_AUTH_GUIDE.md)**
 - ⚠️ **[Limitações de Comentários](python_space/COMMENTS_LIMITATION.md)**
 - 🔧 **[Correções Aplicadas](python_space/FIXES_APPLIED.md)**
-- 🚀 **[Quick Start Node.js](nodejs_space/QUICK_START.md)**
 
 ## 🤝 Contribuindo
 
@@ -279,7 +268,7 @@ Este projeto é fornecido "como está", sem garantias. Use por sua conta e risco
 
 ## 🐛 Suporte
 
-Encontrou um bug? Abra uma issue no GitHub!
+Encontrou um bug? Abra uma issue no [GitHub](https://github.com/ricardo-oamaro/titkok-downloader/issues)!
 
 ## ✨ Autor
 
@@ -288,4 +277,3 @@ Desenvolvido com ❤️ usando Python, FastAPI e Ollama
 ---
 
 **⚠️ Disclaimer:** Este projeto não é afiliado, associado ou endossado pelo TikTok. Use de forma responsável e ética.
-
