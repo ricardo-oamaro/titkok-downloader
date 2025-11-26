@@ -28,7 +28,7 @@ ollama>=0.1.6
 Pillow>=10.0.0
 
 # Video Editing & Analysis
-moviepy>=1.0.3
+moviepy>=1.0.3,<2.0  # v2.x has breaking API changes
 opencv-python>=4.8.0
 numpy>=1.24.0
 
