@@ -9,15 +9,19 @@ import base64
 import logging
 import uuid
 from pathlib import Path
+from typing import Optional
 
 from app.config import settings
 from app.models.schemas import DownloadRequest, ErrorResponse
+from app.models.video_edit_schemas import EditStyle, CompilationRequest, EditedVideoResult
 from app.middleware.auth import verify_api_key
 from app.services.download_service import download_service
 from app.services.ai_comments_service import ai_comments_service
 from app.services.text_parser_service import text_parser_service
 from app.services.image_generator_service import image_generator_service
 from app.services.zip_service import zip_service
+from app.services.capcut_service import CapCutAutomationService
+from app.services.video_analyzer_service import VideoAnalyzerService
 
 # Configure logging
 logging.basicConfig(
@@ -196,6 +200,204 @@ async def download_video(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to process video: {str(e)}"
+        )
+
+
+@app.post(
+    "/edit-video",
+    response_model=EditedVideoResult,
+    responses={
+        200: {"description": "Video edited successfully"},
+        400: {"model": ErrorResponse, "description": "Invalid request"},
+        401: {"model": ErrorResponse, "description": "Unauthorized"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    }
+)
+@limiter.limit(settings.RATE_LIMIT)
+async def edit_video_endpoint(
+    request: Request,
+    url: str,
+    style: EditStyle = EditStyle.VIRAL,
+    add_subtitles: bool = True,
+    target_duration: Optional[int] = None,
+    api_key: str = Depends(verify_api_key),
+):
+    """
+    Download and automatically edit a TikTok video.
+    
+    Applies:
+    - Intelligent cuts based on scene changes
+    - AI-generated subtitles
+    - Visual effects matching the selected style
+    - Speed adjustments
+    - Watermark
+    
+    Styles available:
+    - viral: Fast cuts, trending effects
+    - storytelling: Smooth transitions, full subtitles
+    - educational: Explanatory text, strategic pauses
+    - minimal: No effects, basic cuts only
+    """
+    logger.info(f"Edit video requested: URL={url}, style={style}")
+    
+    download_id = str(uuid.uuid4())
+    temp_dir = Path(settings.DOWNLOADS_DIR) / download_id
+    temp_dir.mkdir(parents=True, exist_ok=True)
+    temp_files = []
+    
+    try:
+        # 1. Download video
+        logger.info("Downloading video...")
+        result = await download_service.download_video(url)
+        video_path = Path(result["file_path"])
+        video_info = result["video_info"]
+        temp_files.append(video_path)
+        
+        # 2. Extract metadata
+        metadata = download_service.get_metadata(video_info)
+        
+        # 3. Generate AI comments for subtitles
+        logger.info("Generating AI comments...")
+        comments, _ = await ai_comments_service.generate_comments(
+            video_title=metadata['title'],
+            video_description=metadata['description'],
+            hashtags=metadata['hashtags'],
+            num_comments=5,  # Only 5 for subtitles
+            output_file=None
+        )
+        
+        # 4. Edit video
+        logger.info("Editing video...")
+        capcut_service = CapCutAutomationService()
+        edited_result = await capcut_service.edit_video(
+            video_path=video_path,
+            comments=comments,
+            metadata=metadata,
+            style=style,
+            add_subtitles=add_subtitles,
+            target_duration=target_duration
+        )
+        
+        logger.info(f"Video edited successfully: {edited_result.video_path}")
+        return edited_result
+        
+    except Exception as e:
+        logger.error(f"Edit video failed: {str(e)}", exc_info=True)
+        zip_service.cleanup_temp_files(temp_files)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to edit video: {str(e)}"
+        )
+
+
+@app.post(
+    "/analyze-video",
+    responses={
+        200: {"description": "Video analyzed successfully"},
+        401: {"model": ErrorResponse, "description": "Unauthorized"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    }
+)
+@limiter.limit(settings.RATE_LIMIT)
+async def analyze_video_endpoint(
+    request: Request,
+    url: str,
+    api_key: str = Depends(verify_api_key),
+):
+    """
+    Analyze a TikTok video to detect:
+    - Key moments and scene changes
+    - Motion intensity
+    - Brightness levels
+    - Optimal cut points
+    
+    Useful for understanding video structure before editing.
+    """
+    logger.info(f"Analyze video requested: URL={url}")
+    
+    temp_files = []
+    
+    try:
+        # Download video
+        result = await download_service.download_video(url)
+        video_path = Path(result["file_path"])
+        temp_files.append(video_path)
+        
+        # Analyze
+        analyzer = VideoAnalyzerService()
+        analysis = await analyzer.analyze_video(video_path)
+        
+        # Cleanup
+        zip_service.cleanup_temp_files(temp_files)
+        
+        return analysis
+        
+    except Exception as e:
+        logger.error(f"Analyze video failed: {str(e)}", exc_info=True)
+        zip_service.cleanup_temp_files(temp_files)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to analyze video: {str(e)}"
+        )
+
+
+@app.post(
+    "/create-compilation",
+    response_model=EditedVideoResult,
+    responses={
+        200: {"description": "Compilation created successfully"},
+        400: {"model": ErrorResponse, "description": "Invalid request"},
+        401: {"model": ErrorResponse, "description": "Unauthorized"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    }
+)
+@limiter.limit(settings.RATE_LIMIT)
+async def create_compilation_endpoint(
+    request: Request,
+    compilation_request: CompilationRequest,
+    api_key: str = Depends(verify_api_key),
+):
+    """
+    Create a compilation from multiple TikTok video URLs.
+    
+    Downloads all videos and creates a single compiled video with:
+    - Smooth transitions between clips
+    - Optional intro/outro
+    - Unified theme
+    - Maximum duration control
+    """
+    logger.info(f"Compilation requested: {len(compilation_request.video_paths)} videos")
+    
+    temp_files = []
+    downloaded_paths = []
+    
+    try:
+        # Download all videos
+        for i, url in enumerate(compilation_request.video_paths):
+            logger.info(f"Downloading video {i+1}/{len(compilation_request.video_paths)}...")
+            result = await download_service.download_video(url)
+            video_path = Path(result["file_path"])
+            temp_files.append(video_path)
+            downloaded_paths.append(video_path)
+        
+        # Create compilation
+        logger.info("Creating compilation...")
+        capcut_service = CapCutAutomationService()
+        compilation_result = await capcut_service.create_compilation(
+            video_paths=downloaded_paths,
+            theme=compilation_request.theme,
+            max_duration=compilation_request.max_duration
+        )
+        
+        logger.info(f"Compilation created: {compilation_result.video_path}")
+        return compilation_result
+        
+    except Exception as e:
+        logger.error(f"Create compilation failed: {str(e)}", exc_info=True)
+        zip_service.cleanup_temp_files(temp_files)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create compilation: {str(e)}"
         )
 
 

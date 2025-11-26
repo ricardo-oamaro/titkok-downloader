@@ -8,6 +8,13 @@ Serviço completo para download de vídeos do TikTok com geração de comentári
 - 🤖 **Geração de comentários** realistas usando IA local (Ollama)
 - 🎨 **Criação de imagens** estilo Instagram com os comentários gerados
 - 📦 **Empacotamento ZIP** com vídeo + comentários + 15 imagens
+- 🎬 **NOVO: Edição automática de vídeos** com IA
+  - Cortes inteligentes baseados em mudanças de cena
+  - Legendas automáticas com os comentários gerados
+  - Efeitos visuais (zoom, fade, speed ramp)
+  - 4 estilos de edição: Viral, Storytelling, Educational, Minimal
+  - Análise de vídeo (momentos-chave, movimento, brilho)
+  - Criação de compilações automáticas
 - 🔐 **Autenticação via API Key** para segurança
 - ⚡ **Rate limiting** para prevenir abuso
 - 🌐 **Interface web** simples e moderna
@@ -19,6 +26,8 @@ Serviço completo para download de vídeos do TikTok com geração de comentári
 - **FastAPI** - Framework web moderno e rápido
 - **yt-dlp** - Download de vídeos do TikTok
 - **Ollama (Llama 3)** - IA local para geração de comentários
+- **MoviePy** - Edição programática de vídeos
+- **OpenCV** - Análise de vídeo e detecção de cenas
 - **Pillow (PIL)** - Geração de imagens estilo Instagram
 - **Pydantic** - Validação de dados
 - **pytest** - Testes unitários e integração
@@ -94,7 +103,7 @@ Acesse:
 
 ## 📡 Uso da API
 
-### Download de Vídeo
+### 1. Download de Vídeo + Comentários + Imagens
 
 ```bash
 curl -X POST "http://localhost:8000/download" \
@@ -104,13 +113,76 @@ curl -X POST "http://localhost:8000/download" \
   --output video_package.zip
 ```
 
-### Resposta
-
-Um arquivo ZIP contendo:
+**Resposta:** ZIP contendo:
 - `video.mp4` - Vídeo do TikTok
 - `comentarios.txt` - 15 comentários gerados por IA
 - `instagram_01.png` até `instagram_15.png` - Imagens dos comentários
-- `README.txt` - Disclaimer sobre conteúdo gerado por IA
+- `README.txt` - Disclaimer
+
+---
+
+### 2. Edição Automática de Vídeo ⭐ NOVO
+
+```bash
+curl -X POST "http://localhost:8000/edit-video" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: sua-api-key" \
+  -d '{
+    "url": "https://www.tiktok.com/@user/video/123456789",
+    "style": "viral",
+    "add_subtitles": true,
+    "target_duration": 30
+  }'
+```
+
+**Estilos disponíveis:**
+- `viral` - Cortes rápidos, efeitos trending, acelera 10%
+- `storytelling` - Transições suaves, legendas completas
+- `educational` - Texto explicativo, sem acelerações
+- `minimal` - Apenas cortes, sem efeitos
+
+**Resposta:** JSON com informações do vídeo editado
+
+---
+
+### 3. Análise de Vídeo
+
+```bash
+curl -X POST "http://localhost:8000/analyze-video" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: sua-api-key" \
+  -d '{"url": "https://www.tiktok.com/@user/video/123456789"}'
+```
+
+**Retorna:**
+- Momentos-chave detectados
+- Mudanças de cena
+- Intensidade de movimento
+- Brilho médio
+- Sugestões de cortes
+
+---
+
+### 4. Criação de Compilação
+
+```bash
+curl -X POST "http://localhost:8000/create-compilation" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: sua-api-key" \
+  -d '{
+    "video_paths": [
+      "https://www.tiktok.com/@user/video/111",
+      "https://www.tiktok.com/@user/video/222",
+      "https://www.tiktok.com/@user/video/333"
+    ],
+    "theme": "trending",
+    "max_duration": 60,
+    "add_intro": true,
+    "add_outro": true
+  }'
+```
+
+**Resposta:** Vídeo compilado com transições suaves
 
 ## 🧪 Testes
 
@@ -136,36 +208,40 @@ pytest tests/test_integration_comments.py
 tiktok_downloader_service/
 └── python_space/
     ├── app/
-    │   ├── main.py              # Aplicação FastAPI
-    │   ├── config.py            # Configurações
-    │   ├── models/              # Schemas Pydantic
+    │   ├── main.py                      # Aplicação FastAPI + novos endpoints
+    │   ├── config.py                    # Configurações
+    │   ├── models/                      # Schemas Pydantic
     │   │   ├── schemas.py
-    │   │   └── comment_schemas.py
-    │   ├── services/            # Lógica de negócio
+    │   │   ├── comment_schemas.py
+    │   │   └── video_edit_schemas.py    # ⭐ NOVO: Schemas de edição
+    │   ├── services/                    # Lógica de negócio
     │   │   ├── download_service.py
     │   │   ├── ai_comments_service.py
     │   │   ├── image_generator_service.py
     │   │   ├── text_parser_service.py
-    │   │   └── zip_service.py
-    │   ├── middleware/          # Autenticação
+    │   │   ├── zip_service.py
+    │   │   ├── capcut_service.py        # ⭐ NOVO: Automação de edição
+    │   │   └── video_analyzer_service.py # ⭐ NOVO: Análise de vídeo
+    │   ├── middleware/                  # Autenticação
     │   │   └── auth.py
-    │   └── static/              # Interface web
+    │   └── static/                      # Interface web
     │       ├── index.html
     │       ├── styles.css
     │       └── script.js
-    ├── tests/                   # Testes unitários e integração
+    ├── tests/                           # Testes unitários e integração
     │   ├── conftest.py
     │   ├── test_ai_comments_service.py
     │   ├── test_image_generator_service.py
     │   ├── test_text_parser_service.py
     │   ├── test_zip_service.py
-    │   └── test_integration_comments.py
-    ├── requirements.txt         # Dependências Python
-    ├── .env.example             # Exemplo de configuração
-    ├── README.md                # Documentação
-    ├── TIKTOK_AUTH_GUIDE.md     # Guia de autenticação
-    ├── COMMENTS_LIMITATION.md   # Limitações conhecidas
-    └── FIXES_APPLIED.md         # Histórico de correções
+    │   ├── test_integration_comments.py
+    │   └── test_video_editing.py        # ⭐ NOVO: Testes de edição
+    ├── requirements.txt                 # Dependências Python (atualizado)
+    ├── .env.example                     # Exemplo de configuração
+    ├── README.md                        # Documentação
+    ├── TIKTOK_AUTH_GUIDE.md             # Guia de autenticação
+    ├── COMMENTS_LIMITATION.MD           # Limitações conhecidas
+    └── FIXES_APPLIED.md                 # Histórico de correções
 ```
 
 ## 🔐 Autenticação do TikTok
@@ -215,6 +291,75 @@ As imagens simulam o layout do Instagram:
 - **Layout:** Username, comentário, likes, timestamp
 - **Ícones:** Curtir e responder
 - **Marca d'água:** Sempre presente
+
+## 🎯 Casos de Uso - Edição Automática
+
+### 1. Criador de Clipes Virais
+```python
+# Download TikTok → Detectar momentos-chave → Cortes automáticos
+# → Legendas virais → Efeitos trending → Exportar múltiplas versões
+
+POST /edit-video
+{
+  "url": "tiktok.com/@user/video/123",
+  "style": "viral",
+  "target_duration": 15,
+  "add_subtitles": true
+}
+```
+
+**Resultado:** Vídeo otimizado para máximo engajamento
+
+---
+
+### 2. Compilações Automáticas
+```python
+# Download 10 vídeos → Análise de tema → Ordenar por relevância
+# → Transições suaves → Música unificada → Intro/Outro
+
+POST /create-compilation
+{
+  "video_paths": ["url1", "url2", "url3"],
+  "theme": "trending",
+  "max_duration": 60
+}
+```
+
+**Resultado:** Compilação profissional em segundos
+
+---
+
+### 3. Conteúdo Educacional
+```python
+# Download tutorial → Legendas com IA → Marcadores de capítulos
+# → Zoom em pontos-chave → Pausas estratégicas
+
+POST /edit-video
+{
+  "url": "tiktok.com/@teacher/video/456",
+  "style": "educational",
+  "add_subtitles": true
+}
+```
+
+**Resultado:** Vídeo didático com legendas e destaques
+
+---
+
+### 4. Análise para Estratégia
+```python
+# Analisar concorrentes → Identificar padrões de cortes
+# → Detectar momentos de pico → Replicar estratégia
+
+POST /analyze-video
+{
+  "url": "tiktok.com/@viral/video/789"
+}
+```
+
+**Resultado:** Insights sobre estrutura e timing
+
+---
 
 ## ⚠️ Limitações Conhecidas
 

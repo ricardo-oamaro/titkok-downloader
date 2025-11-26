@@ -27,6 +27,15 @@ ollama>=0.3.0
 # Image Generation
 Pillow>=10.0.0
 
+# Video Editing & Analysis
+moviepy>=1.0.3  # Video editing and manipulation
+opencv-python>=4.8.0  # Video analysis and frame processing
+numpy>=1.24.0  # Required for opencv and moviepy
+
+# Optional: RPA Automation (fallback)
+# pyautogui>=0.9.54  # Uncomment if RPA automation is needed
+# keyboard>=0.13.5  # Uncomment if keyboard control is needed
+
 # Testing
 pytest>=8.0.0
 pytest-asyncio>=0.24.0
