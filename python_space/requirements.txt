@@ -32,6 +32,13 @@ moviepy>=1.0.3,<2.0  # v2.x has breaking API changes
 opencv-python>=4.8.0
 numpy>=1.24.0
 
+# Audio Transcription (Whisper)
+faster-whisper>=0.10.0  # Optimized Whisper implementation
+soundfile>=0.12.0  # Audio file reading
+
+# Audio Analysis (optional)
+librosa>=0.10.0  # Beat detection and audio analysis
+
 # Optional: RPA Automation (fallback)
 # pyautogui>=0.9.54  # Uncomment if RPA automation is needed
 # keyboard>=0.13.5  # Uncomment if keyboard control is needed

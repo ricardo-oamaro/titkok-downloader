@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "llama3"
     
+    # Whisper (Audio transcription)
+    WHISPER_MODEL: str = "base"  # tiny, base, small, medium, large
+    WHISPER_DEVICE: str = "cpu"  # cpu, cuda
+    WHISPER_COMPUTE_TYPE: str = "int8"  # int8, float16, float32
+    
     class Config:
         env_file = ".env"
         case_sensitive = True

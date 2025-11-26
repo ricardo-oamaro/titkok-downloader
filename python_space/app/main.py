@@ -14,6 +14,7 @@ from typing import Optional
 from app.config import settings
 from app.models.schemas import DownloadRequest, ErrorResponse
 from app.models.video_edit_schemas import EditStyle, CompilationRequest, EditedVideoResult
+from app.models.story_video_schemas import StoryVideoRequest, StoryVideoResult
 from app.middleware.auth import verify_api_key
 from app.services.download_service import download_service
 from app.services.ai_comments_service import ai_comments_service
@@ -22,6 +23,7 @@ from app.services.image_generator_service import image_generator_service
 from app.services.zip_service import zip_service
 from app.services.capcut_service import CapCutAutomationService
 from app.services.video_analyzer_service import VideoAnalyzerService
+from app.services.story_video_service import StoryVideoService
 
 # Configure logging
 logging.basicConfig(
@@ -398,6 +400,93 @@ async def create_compilation_endpoint(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to create compilation: {str(e)}"
+        )
+
+
+@app.post(
+    "/create-story-video",
+    response_model=StoryVideoResult,
+    tags=["Video Creation"],
+    responses={
+        200: {"description": "Story video created successfully"},
+        401: {"model": ErrorResponse, "description": "Unauthorized"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    }
+)
+@limiter.limit(settings.RATE_LIMIT)
+async def create_story_video_endpoint(
+    request: Request,
+    story_request: StoryVideoRequest,
+    api_key: str = Depends(verify_api_key),
+):
+    """
+    Cria vídeo inteligente a partir de narração + imagens.
+    
+    Processo:
+    1. Transcreve o áudio usando Whisper
+    2. Identifica conceitos e palavras-chave na fala
+    3. Seleciona imagens relevantes baseado nos nomes dos arquivos
+    4. Gera vídeo sincronizado com transições e efeitos
+    
+    Estilos disponíveis:
+    - smooth: Transições suaves e longas (melhor para histórias emocionais)
+    - dynamic: Transições rápidas com zoom sutil (melhor para conteúdo energético)
+    - ken_burns: Efeito cinematográfico de zoom e pan (melhor para apresentações)
+    
+    Exemplo de estrutura:
+    ```
+    minha_pasta/
+    ├── audio.mp3          # Narração
+    ├── intro.jpg          # Imagens com nomes descritivos
+    ├── produto_final.jpg
+    └── resultado.png
+    ```
+    
+    O sistema usa IA (Ollama) para fazer matching semântico entre o que é falado
+    e os nomes das imagens, criando um vídeo sincronizado automaticamente.
+    """
+    logger.info(f"Story video request: {story_request.images_dir}, audio: {story_request.audio_file}")
+    
+    try:
+        images_dir = Path(story_request.images_dir)
+        audio_file = Path(story_request.audio_file)
+        
+        # Validar caminhos
+        if not images_dir.exists():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Images directory not found: {story_request.images_dir}"
+            )
+        
+        if not audio_file.exists():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Audio file not found: {story_request.audio_file}"
+            )
+        
+        # Criar vídeo
+        story_service = StoryVideoService()
+        result = await story_service.create_story_video(
+            images_dir=images_dir,
+            audio_file=audio_file,
+            style=story_request.style,
+            resolution=story_request.resolution
+        )
+        
+        logger.info(f"Story video created: {result.video_path}")
+        return result
+        
+    except ValueError as e:
+        logger.error(f"Validation error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Story video creation failed: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create story video: {str(e)}"
         )
 
 
